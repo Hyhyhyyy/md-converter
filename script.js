@@ -160,33 +160,42 @@ async function exportToPdf() {
     showLoading();
 
     try {
-        // Create PDF container and add to DOM (required for html2pdf)
-        const pdfContainer = document.createElement('div');
-        pdfContainer.className = 'pdf-container';
-        pdfContainer.style.position = 'absolute';
-        pdfContainer.style.left = '-9999px';
-        pdfContainer.style.top = '0';
-        pdfContainer.style.width = '210mm';
-        pdfContainer.style.background = 'white';
-        pdfContainer.innerHTML = marked.parse(markdownContent);
+        // Use the existing preview pane which is already visible in DOM
+        // Clone it to avoid modifying the original
+        const contentClone = previewPane.cloneNode(true);
 
-        document.body.appendChild(pdfContainer);
+        // Create a wrapper with proper styling
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            font-family: 'Nunito', Arial, sans-serif;
+            padding: 20px;
+            background: white;
+            color: #2D3748;
+            line-height: 1.7;
+            max-width: 800px;
+        `;
+        wrapper.appendChild(contentClone);
 
-        // Wait for content to render
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Temporarily show wrapper in a visible position
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.zIndex = '-1000';
+        wrapper.style.opacity = '1';
+        document.body.appendChild(wrapper);
 
-        // PDF options
+        // Wait for rendering
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         const opt = {
-            margin: [15, 15, 15, 15],
+            margin: 15,
             filename: getExportFilename('.pdf'),
-            image: { type: 'jpeg', quality: 0.98 },
+            image: { type: 'jpeg', quality: 0.95 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
-                letterRendering: true,
                 logging: false,
-                width: pdfContainer.scrollWidth,
-                height: pdfContainer.scrollHeight
+                backgroundColor: '#ffffff'
             },
             jsPDF: {
                 unit: 'mm',
@@ -195,17 +204,14 @@ async function exportToPdf() {
             }
         };
 
-        await html2pdf().set(opt).from(pdfContainer).save();
+        await html2pdf().set(opt).from(wrapper).save();
 
-        // Remove container from DOM
-        document.body.removeChild(pdfContainer);
-
+        document.body.removeChild(wrapper);
         hideLoading();
     } catch (error) {
         hideLoading();
-        // Clean up if error
-        const pdfContainer = document.querySelector('.pdf-container');
-        if (pdfContainer) document.body.removeChild(pdfContainer);
+        const wrapper = document.querySelector('div[style*="z-index: -1000"]');
+        if (wrapper) document.body.removeChild(wrapper);
         alert('PDF 导出失败: ' + error.message);
         console.error(error);
     }
