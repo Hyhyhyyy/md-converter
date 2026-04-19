@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD转换器 - 免费Markdown转PDF/Word</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- HTML to PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Docx generator -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.min.js"></script>
+    <!-- FileSaver -->
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+</head>
+<body>
+    <!-- Decorative Geometric Shapes -->
+    <div class="geometric-bg">
+        <div class="shape circle circle-1"></div>
+        <div class="shape circle circle-2"></div>
+        <div class="shape triangle triangle-1"></div>
+        <div class="shape triangle triangle-2"></div>
+        <div class="shape square square-1"></div>
+        <div class="shape square square-2"></div>
+        <div class="shape wave wave-1"></div>
+        <div class="shape wave wave-2"></div>
+        <div class="shape dots dots-1"></div>
+        <div class="shape dots dots-2"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <span class="logo-md">MD</span>
+                    <svg class="logo-arrow" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="logo-pdf">PDF</span>
+                </div>
+            </div>
+            <h1 class="title">Markdown 转换器</h1>
+            <p class="subtitle">免费将 Markdown 文件转换为 PDF 或 Word 文档</p>
+        </header>
+
+        <!-- Main Converter -->
+        <main class="converter">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 64 64" fill="none">
+                            <circle cx="32" cy="32" r="30" fill="#FFE5B4"/>
+                            <path d="M32 20v24M20 32h24" stroke="#FF9F43" stroke-width="4" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="upload-title">拖拽文件到这里</h3>
+                    <p class="upload-hint">或点击选择 .md 文件</p>
+                    <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
+                    <button class="btn-select" id="selectBtn">选择文件</button>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <div class="file-info">
+                    <span class="file-name" id="fileName"></span>
+                    <button class="btn-remove" id="removeBtn" title="移除文件">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <span class="preview-label">预览</span>
+                        <div class="preview-tabs">
+                            <button class="tab active" data-tab="preview">渲染</button>
+                            <button class="tab" data-tab="source">源码</button>
+                        </div>
+                    </div>
+                    <div class="preview-content">
+                        <div class="preview-pane" id="previewPane"></div>
+                        <div class="source-pane" id="sourcePane" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Export Buttons -->
+                <div class="export-buttons">
+                    <button class="btn-export btn-pdf" id="exportPdf">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="2" width="16" height="20" rx="2" fill="#FF6B6B"/>
+                            <path d="M8 10h8M8 14h8M8 18h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        导出 PDF
+                    </button>
+                    <button class="btn-export btn-word" id="exportWord">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect x="4" y="2" width="16" height="20" rx="2" fill="#4ECDC4"/>
+                            <text x="12" y="15" text-anchor="middle" fill="white" font-size="8" font-weight="bold">W</text>
+                        </svg>
+                        导出 Word
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Features -->
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E);">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>完全免费</h3>
+                <p>无需注册，无需付费，即开即用</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #4ECDC4, #6EE7B7);">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>隐私安全</h3>
+                <p>所有转换在本地完成，文件不上传服务器</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #A78BFA, #C4B5FD);">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/>
+                        <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3>快速转换</h3>
+                <p>即时渲染，秒级导出</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with <span class="heart">❤</span> by Claude</p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>正在转换...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
