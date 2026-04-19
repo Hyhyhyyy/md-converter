@@ -6,148 +6,117 @@
     <title>MD转换器 - 免费Markdown转PDF/Word</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- Markdown parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- HTML to PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Docx generator -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.min.js"></script>
-    <!-- FileSaver -->
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 </head>
 <body>
-    <!-- Decorative Geometric Shapes -->
     <div class="geometric-bg">
         <div class="shape circle circle-1"></div>
         <div class="shape circle circle-2"></div>
         <div class="shape triangle triangle-1"></div>
-        <div class="shape triangle triangle-2"></div>
         <div class="shape square square-1"></div>
-        <div class="shape square square-2"></div>
-        <div class="shape wave wave-1"></div>
-        <div class="shape wave wave-2"></div>
         <div class="shape dots dots-1"></div>
-        <div class="shape dots dots-2"></div>
     </div>
 
     <div class="container">
-        <!-- Header -->
         <header class="header">
-            <div class="logo">
-                <div class="logo-icon">
-                    <span class="logo-md">MD</span>
-                    <svg class="logo-arrow" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span class="logo-pdf">PDF</span>
-                </div>
+            <div class="logo-badge">
+                <span class="logo-text">MD</span>
+                <span class="logo-arrow">→</span>
+                <span class="logo-text logo-pdf">PDF/Word</span>
             </div>
             <h1 class="title">Markdown 转换器</h1>
-            <p class="subtitle">免费将 Markdown 文件转换为 PDF 或 Word 文档</p>
+            <p class="subtitle">免费 · 本地转换 · 隐私安全</p>
         </header>
 
-        <!-- Main Converter -->
         <main class="converter">
-            <!-- Upload Section -->
             <div class="upload-section" id="uploadSection">
                 <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">
-                        <svg viewBox="0 0 64 64" fill="none">
-                            <circle cx="32" cy="32" r="30" fill="#FFE5B4"/>
-                            <path d="M32 20v24M20 32h24" stroke="#FF9F43" stroke-width="4" stroke-linecap="round"/>
+                    <div class="upload-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 4v12m0-12l4 4m-4-4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
+                        <p class="upload-title">拖拽或点击上传</p>
+                        <p class="upload-hint">支持 .md .markdown .txt 文件</p>
+                        <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
                     </div>
-                    <h3 class="upload-title">拖拽文件到这里</h3>
-                    <p class="upload-hint">或点击选择 .md 文件</p>
-                    <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
-                    <button class="btn-select" id="selectBtn">选择文件</button>
                 </div>
             </div>
 
-            <!-- Preview Section -->
             <div class="preview-section" id="previewSection" style="display: none;">
-                <div class="file-info">
+                <div class="preview-header-bar">
                     <span class="file-name" id="fileName"></span>
-                    <button class="btn-remove" id="removeBtn" title="移除文件">
-                        <svg viewBox="0 0 24 24" fill="none">
+                    <button class="btn-remove" id="removeBtn">
+                        <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
                             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                     </button>
                 </div>
 
-                <div class="preview-container">
-                    <div class="preview-header">
-                        <span class="preview-label">预览</span>
-                        <div class="preview-tabs">
-                            <button class="tab active" data-tab="preview">渲染</button>
-                            <button class="tab" data-tab="source">源码</button>
-                        </div>
-                    </div>
-                    <div class="preview-content">
-                        <div class="preview-pane" id="previewPane"></div>
-                        <div class="source-pane" id="sourcePane" style="display: none;"></div>
-                    </div>
+                <div class="preview-tabs-bar">
+                    <button class="tab active" data-tab="preview">预览</button>
+                    <button class="tab" data-tab="source">源码</button>
                 </div>
 
-                <!-- Export Buttons -->
+                <div class="preview-content">
+                    <div class="preview-pane" id="previewPane"></div>
+                    <div class="source-pane" id="sourcePane" style="display: none;"></div>
+                </div>
+
                 <div class="export-buttons">
                     <button class="btn-export btn-pdf" id="exportPdf">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <rect x="4" y="2" width="16" height="20" rx="2" fill="#FF6B6B"/>
-                            <path d="M8 10h8M8 14h8M8 18h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
+                            <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
+                            <text x="8" y="14" font-size="6" fill="currentColor" font-weight="bold">PDF</text>
                         </svg>
-                        导出 PDF
+                        <span>导出 PDF</span>
                     </button>
                     <button class="btn-export btn-word" id="exportWord">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <rect x="4" y="2" width="16" height="20" rx="2" fill="#4ECDC4"/>
-                            <text x="12" y="15" text-anchor="middle" fill="white" font-size="8" font-weight="bold">W</text>
+                        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
+                            <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
+                            <text x="6" y="14" font-size="6" fill="currentColor" font-weight="bold">DOCX</text>
                         </svg>
-                        导出 Word
+                        <span>导出 Word</span>
                     </button>
                 </div>
             </div>
         </main>
 
-        <!-- Features -->
         <section class="features">
-            <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E);">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+            <div class="feature-row">
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E);"></div>
+                    <h4>完全免费</h4>
+                    <p>无需注册付费</p>
                 </div>
-                <h3>完全免费</h3>
-                <p>无需注册，无需付费，即开即用</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #4ECDC4, #6EE7B7);">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: linear-gradient(135deg, #4ECDC4, #6EE7B7);"></div>
+                    <h4>隐私安全</h4>
+                    <p>本地浏览器转换</p>
                 </div>
-                <h3>隐私安全</h3>
-                <p>所有转换在本地完成，文件不上传服务器</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon" style="background: linear-gradient(135deg, #A78BFA, #C4B5FD);">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2"/>
-                        <path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: linear-gradient(135deg, #A78BFA, #C4B5FD);"></div>
+                    <h4>即时导出</h4>
+                    <p>支持表格/代码块</p>
                 </div>
-                <h3>快速转换</h3>
-                <p>即时渲染，秒级导出</p>
+                <div class="feature-item">
+                    <div class="feature-dot" style="background: linear-gradient(135deg, #FFD93D, #FFE5B4);"></div>
+                    <h4>拖拽上传</h4>
+                    <p>简单便捷操作</p>
+                </div>
             </div>
         </section>
 
-        <!-- Footer -->
         <footer class="footer">
-            <p>Made with <span class="heart">❤</span> by Claude</p>
+            <p>Made with ❤ for better documents</p>
         </footer>
     </div>
 
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
         <div class="loading-spinner">
             <div class="spinner"></div>

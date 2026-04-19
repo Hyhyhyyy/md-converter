@@ -170,20 +170,33 @@ async function exportToPdf() {
     showLoading();
 
     try {
-        // Create PDF container
+        // Create PDF container and add to DOM (required for html2pdf)
         const pdfContainer = document.createElement('div');
         pdfContainer.className = 'pdf-container';
+        pdfContainer.style.position = 'absolute';
+        pdfContainer.style.left = '-9999px';
+        pdfContainer.style.top = '0';
+        pdfContainer.style.width = '210mm';
+        pdfContainer.style.background = 'white';
         pdfContainer.innerHTML = marked.parse(markdownContent);
+
+        document.body.appendChild(pdfContainer);
+
+        // Wait for content to render
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // PDF options
         const opt = {
-            margin: [10, 10, 10, 10],
+            margin: [15, 15, 15, 15],
             filename: getExportFilename('.pdf'),
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
-                letterRendering: true
+                letterRendering: true,
+                logging: false,
+                width: pdfContainer.scrollWidth,
+                height: pdfContainer.scrollHeight
             },
             jsPDF: {
                 unit: 'mm',
@@ -194,10 +207,17 @@ async function exportToPdf() {
 
         await html2pdf().set(opt).from(pdfContainer).save();
 
+        // Remove container from DOM
+        document.body.removeChild(pdfContainer);
+
         hideLoading();
     } catch (error) {
         hideLoading();
+        // Clean up if error
+        const pdfContainer = document.querySelector('.pdf-container');
+        if (pdfContainer) document.body.removeChild(pdfContainer);
         alert('PDF 导出失败: ' + error.message);
+        console.error(error);
     }
 }
 
@@ -211,13 +231,26 @@ async function exportToWord() {
     showLoading();
 
     try {
-        const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = docx;
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
 
         // Parse markdown and convert to docx paragraphs
+        const children = parseMarkdownToDocx(markdownContent);
+
         const doc = new Document({
+            numbering: {
+                config: [{
+                    reference: 'default-numbering',
+                    levels: [{
+                        level: 0,
+                        format: 'decimal',
+                        text: '%1.',
+                        alignment: 'start'
+                    }]
+                }]
+            },
             sections: [{
                 properties: {},
-                children: parseMarkdownToDocx(markdownContent)
+                children: children
             }]
         });
 
@@ -234,12 +267,15 @@ async function exportToWord() {
 
 // ===== Parse Markdown to DOCX =====
 function parseMarkdownToDocx(content) {
-    const { Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
-    const paragraphs = [];
+    const { Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = docx;
+    const elements = [];
     const lines = content.split('\n');
 
     let inCodeBlock = false;
     let codeContent = '';
+    let inTable = false;
+    let tableRows = [];
+    let isTableHeader = false;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -248,13 +284,17 @@ function parseMarkdownToDocx(content) {
         if (line.startsWith('```')) {
             if (inCodeBlock) {
                 // End code block
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: codeContent,
-                        font: 'Consolas',
-                        size: 20
-                    })]
-                }));
+                if (codeContent.trim()) {
+                    elements.push(new Paragraph({
+                        children: [new TextRun({
+                            text: codeContent.trim(),
+                            font: 'Consolas',
+                            size: 20,
+                            shading: { fill: 'F5F5F5' }
+                        })],
+                        shading: { fill: 'F5F5F5' }
+                    }));
+                }
                 codeContent = '';
                 inCodeBlock = false;
             } else {
@@ -269,9 +309,44 @@ function parseMarkdownToDocx(content) {
             continue;
         }
 
+        // Table handling
+        if (line.match(/^\|/)) {
+            if (!inTable) {
+                inTable = true;
+                isTableHeader = true;
+                tableRows = [];
+            }
+
+            // Check if it's separator line
+            if (line.match(/^\|[-:]+\|[-:]+\|/)) {
+                isTableHeader = false;
+                continue;
+            }
+
+            // Parse table row
+            const cells = line.split('|')
+                .filter(cell => cell.trim() !== '')
+                .map(cell => cell.trim());
+
+            if (cells.length > 0) {
+                tableRows.push({ cells, isHeader: isTableHeader });
+            }
+            continue;
+        } else if (inTable) {
+            // End of table - create docx table
+            if (tableRows.length > 0) {
+                const docxTable = createDocxTable(tableRows);
+                elements.push(docxTable);
+                elements.push(new Paragraph({ children: [] })); // Add spacing
+            }
+            inTable = false;
+            tableRows = [];
+            isTableHeader = false;
+        }
+
         // Empty line
         if (line.trim() === '') {
-            paragraphs.push(new Paragraph({ children: [] }));
+            elements.push(new Paragraph({ children: [] }));
             continue;
         }
 
@@ -288,7 +363,7 @@ function parseMarkdownToDocx(content) {
                 default: headingLevel = HeadingLevel.HEADING_4;
             }
 
-            paragraphs.push(new Paragraph({
+            elements.push(new Paragraph({
                 heading: headingLevel,
                 children: [new TextRun({
                     text: text,
@@ -300,9 +375,9 @@ function parseMarkdownToDocx(content) {
 
         // Horizontal rule
         if (line.match(/^-{3,}$|^\*{3,}$/)) {
-            paragraphs.push(new Paragraph({
+            elements.push(new Paragraph({
                 border: {
-                    bottom: { style: BorderStyle.SINGLE, size: 1 }
+                    bottom: { style: BorderStyle.SINGLE, size: 6, color: 'CCCCCC' }
                 },
                 children: []
             }));
@@ -311,10 +386,12 @@ function parseMarkdownToDocx(content) {
 
         // Blockquote
         if (line.startsWith('>')) {
-            paragraphs.push(new Paragraph({
+            elements.push(new Paragraph({
                 indent: { left: 720 },
                 children: [new TextRun({
-                    text: line.replace(/^>\s*/, '')
+                    text: line.replace(/^>\s*/, ''),
+                    italics: true,
+                    color: '666666'
                 })]
             }));
             continue;
@@ -322,33 +399,80 @@ function parseMarkdownToDocx(content) {
 
         // Unordered list
         if (line.match(/^[\*\-\+]\s/)) {
-            paragraphs.push(new Paragraph({
+            elements.push(new Paragraph({
                 bullet: { level: 0 },
-                children: [new TextRun({
-                    text: line.replace(/^[\*\-\+]\s/, '')
-                })]
+                children: parseInlineFormatting(line.replace(/^[\*\-\+]\s/, ''))
             }));
             continue;
         }
 
         // Ordered list
         if (line.match(/^\d+\.\s/)) {
-            paragraphs.push(new Paragraph({
+            elements.push(new Paragraph({
                 numbering: { reference: 'default-numbering', level: 0 },
-                children: [new TextRun({
-                    text: line.replace(/^\d+\.\s/, '')
-                })]
+                children: parseInlineFormatting(line.replace(/^\d+\.\s/, ''))
             }));
             continue;
         }
 
         // Regular paragraph with inline formatting
-        paragraphs.push(new Paragraph({
+        elements.push(new Paragraph({
             children: parseInlineFormatting(line)
         }));
     }
 
-    return paragraphs;
+    // Handle remaining table at end of content
+    if (inTable && tableRows.length > 0) {
+        const docxTable = createDocxTable(tableRows);
+        elements.push(docxTable);
+    }
+
+    return elements;
+}
+
+// ===== Create DOCX Table =====
+function createDocxTable(tableRows) {
+    const { Table, TableRow, TableCell, WidthType, BorderStyle, TextRun, Paragraph } = docx;
+
+    const numCols = Math.max(...tableRows.map(r => r.cells.length));
+
+    const rows = tableRows.map(row => {
+        const cells = row.cells.map(cellText => {
+            return new TableCell({
+                children: [new Paragraph({
+                    children: [new TextRun({
+                        text: cellText,
+                        bold: row.isHeader
+                    })]
+                })],
+                width: { size: 100 / numCols, type: WidthType.PERCENTAGE },
+                shading: row.isHeader ? { fill: 'F0F0F0' } : undefined
+            });
+        });
+
+        // Fill missing cells
+        while (cells.length < numCols) {
+            cells.push(new TableCell({
+                children: [new Paragraph({ children: [] })],
+                width: { size: 100 / numCols, type: WidthType.PERCENTAGE }
+            }));
+        }
+
+        return new TableRow({ children: cells });
+    });
+
+    return new Table({
+        rows: rows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+            left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+            right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+            insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' }
+        }
+    });
 }
 
 // ===== Parse Inline Formatting =====
@@ -371,7 +495,7 @@ function parseInlineFormatting(text) {
 
         // Italic text *text* or _text_
         const italicMatch = remaining.match(/\*(.+?)\*|_(.+?)_/);
-        if (italicMatch && italicMatch.index === 0 && !remaining.startsWith('**')) {
+        if (italicMatch && italicMatch.index === 0 && !remaining.startsWith('**') && !remaining.startsWith('__')) {
             runs.push(new TextRun({
                 text: italicMatch[1] || italicMatch[2],
                 italics: true
@@ -381,19 +505,31 @@ function parseInlineFormatting(text) {
         }
 
         // Inline code `code`
-        const codeMatch = remaining.match(/`(.+?)`/);
+        const codeMatch = remaining.match(/`([^`]+)`/);
         if (codeMatch && codeMatch.index === 0) {
             runs.push(new TextRun({
                 text: codeMatch[1],
                 font: 'Consolas',
-                size: 20
+                size: 20,
+                shading: { fill: 'F0F0F0' }
             }));
             remaining = remaining.substring(codeMatch[0].length);
             continue;
         }
 
+        // Strikethrough ~~text~~
+        const strikeMatch = remaining.match(/~~(.+?)~~/);
+        if (strikeMatch && strikeMatch.index === 0) {
+            runs.push(new TextRun({
+                text: strikeMatch[1],
+                strike: true
+            }));
+            remaining = remaining.substring(strikeMatch[0].length);
+            continue;
+        }
+
         // Regular text until next special character
-        const nextSpecial = remaining.search(/\*\*|__|\*|_|`/);
+        const nextSpecial = remaining.search(/\*\*|__|~~|`|\*(?!\*)|_(?!_)/);
         if (nextSpecial === -1) {
             runs.push(new TextRun({ text: remaining }));
             break;
