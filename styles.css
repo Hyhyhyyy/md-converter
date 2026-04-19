@@ -180,6 +180,7 @@ body {
 }
 
 .upload-area {
+    display: block;
     background: var(--white);
     border: 2px dashed #E5E7EB;
     border-radius: var(--radius-lg);

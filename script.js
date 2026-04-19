@@ -5,7 +5,6 @@ let markdownContent = '';
 // ===== DOM Elements =====
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
-const selectBtn = document.getElementById('selectBtn');
 const uploadSection = document.getElementById('uploadSection');
 const previewSection = document.getElementById('previewSection');
 const fileName = document.getElementById('fileName');
@@ -33,19 +32,10 @@ function setupMarkedOptions() {
 
 // ===== Event Listeners =====
 function setupEventListeners() {
-    // File selection
-    selectBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
-
-    uploadArea.addEventListener('click', () => {
-        fileInput.click();
-    });
-
+    // File selection - label triggers input automatically
     fileInput.addEventListener('change', handleFileSelect);
 
-    // Drag and drop
+    // Drag and drop on upload area
     uploadArea.addEventListener('dragover', handleDragOver);
     uploadArea.addEventListener('dragleave', handleDragLeave);
     uploadArea.addEventListener('drop', handleDrop);

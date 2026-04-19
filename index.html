@@ -33,17 +33,15 @@
 
         <main class="converter">
             <div class="upload-section" id="uploadSection">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-content">
-                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 4v12m0-12l4 4m-4-4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <p class="upload-title">拖拽或点击上传</p>
-                        <p class="upload-hint">支持 .md .markdown .txt 文件</p>
-                        <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
-                    </div>
-                </div>
+                <label class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".md,.markdown,.txt" hidden>
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 4v12m0-12l4 4m-4-4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <p class="upload-title">拖拽或点击上传</p>
+                    <p class="upload-hint">支持 .md .markdown .txt 文件</p>
+                </label>
             </div>
 
             <div class="preview-section" id="previewSection" style="display: none;">
