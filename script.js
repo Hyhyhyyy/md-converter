@@ -160,58 +160,78 @@ async function exportToPdf() {
     showLoading();
 
     try {
-        // Use the existing preview pane which is already visible in DOM
-        // Clone it to avoid modifying the original
-        const contentClone = previewPane.cloneNode(true);
+        // Create a dedicated print container with all styles inline
+        const printDiv = document.createElement('div');
+        printDiv.id = 'pdf-print-container';
 
-        // Create a wrapper with proper styling
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = `
-            font-family: 'Nunito', Arial, sans-serif;
-            padding: 20px;
-            background: white;
-            color: #2D3748;
-            line-height: 1.7;
-            max-width: 800px;
+        // Parse markdown and create styled HTML
+        const htmlContent = marked.parse(markdownContent);
+
+        printDiv.innerHTML = `
+            <style>
+                #pdf-print-container {
+                    font-family: 'Nunito', Arial, sans-serif;
+                    padding: 30px 40px;
+                    background: white;
+                    color: #2D3748;
+                    line-height: 1.7;
+                }
+                #pdf-print-container h1 { font-size: 24px; margin: 20px 0 12px; border-bottom: 2px solid #E5E7EB; padding-bottom: 6px; font-weight: 700; }
+                #pdf-print-container h2 { font-size: 18px; margin: 16px 0 8px; font-weight: 700; }
+                #pdf-print-container h3 { font-size: 15px; margin: 12px 0 6px; font-weight: 700; }
+                #pdf-print-container p { margin: 10px 0; }
+                #pdf-print-container ul, #pdf-print-container ol { margin: 10px 0; padding-left: 24px; }
+                #pdf-print-container li { margin: 4px 0; }
+                #pdf-print-container code { background: #F1F3F5; padding: 2px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 0.9em; }
+                #pdf-print-container pre { background: #2D3748; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0; font-family: Consolas, monospace; font-size: 13px; }
+                #pdf-print-container pre code { background: transparent; padding: 0; color: inherit; }
+                #pdf-print-container blockquote { border-left: 3px solid #A78BFA; margin: 12px 0; padding-left: 12px; color: #666; font-style: italic; }
+                #pdf-print-container table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+                #pdf-print-container th, #pdf-print-container td { border: 1px solid #E5E7EB; padding: 8px 12px; text-align: left; }
+                #pdf-print-container th { background: #F8F9FA; font-weight: 700; }
+                #pdf-print-container a { color: #A78BFA; }
+                #pdf-print-container img { max-width: 100%; height: auto; }
+                #pdf-print-container hr { border: none; border-top: 1px solid #E5E7EB; margin: 16px 0; }
+            </style>
+            ${htmlContent}
         `;
-        wrapper.appendChild(contentClone);
 
-        // Temporarily show wrapper in a visible position
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-        wrapper.style.zIndex = '-1000';
-        wrapper.style.opacity = '1';
-        document.body.appendChild(wrapper);
+        // Append to body in a visible way (html2canvas needs visibility)
+        document.body.appendChild(printDiv);
 
-        // Wait for rendering
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Wait for styles to apply
+        await new Promise(r => setTimeout(r, 300));
 
         const opt = {
-            margin: 15,
+            margin: 12,
             filename: getExportFilename('.pdf'),
-            image: { type: 'jpeg', quality: 0.95 },
+            image: { type: 'jpeg', quality: 0.92 },
             html2canvas: {
                 scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                allowTaint: true,
+                scrollY: 0,
+                scrollX: 0,
+                windowWidth: printDiv.scrollWidth,
+                windowHeight: printDiv.scrollHeight
             },
             jsPDF: {
                 unit: 'mm',
                 format: 'a4',
                 orientation: 'portrait'
-            }
+            },
+            pagebreak: { mode: 'avoid-all' }
         };
 
-        await html2pdf().set(opt).from(wrapper).save();
+        await html2pdf().set(opt).from(printDiv).save();
 
-        document.body.removeChild(wrapper);
+        document.body.removeChild(printDiv);
         hideLoading();
     } catch (error) {
         hideLoading();
-        const wrapper = document.querySelector('div[style*="z-index: -1000"]');
-        if (wrapper) document.body.removeChild(wrapper);
+        const printDiv = document.getElementById('pdf-print-container');
+        if (printDiv) document.body.removeChild(printDiv);
         alert('PDF 导出失败: ' + error.message);
         console.error(error);
     }
